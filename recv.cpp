@@ -33,6 +33,7 @@ string recvFileName()
 	/* TODO: declare an instance of the fileNameMsg struct to be
 	 * used for holding the message received from the sender.
          */
+	printf("receiving file name\n");
 	fileNameMsg msg;
     /* TODO: Receive the file name using msgrcv() */
 	if(msgrcv(msqid, &msg, sizeof(fileNameMsg) - sizeof(long), FILE_NAME_TRANSFER_TYPE, 0) < 0)
@@ -41,8 +42,8 @@ string recvFileName()
 		exit(-1);
 	}
 	fileName = msg.fileName;
+	printf("done\n");
 	/* TODO: return the received file name */
-	
     return fileName;
 }
  /**
@@ -81,7 +82,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 			exit(-1);
 		}
 		/* TODO: Create a message queue */
-		msqid = msgget(key, IPC_CREAT | 0600);
+		msqid = msgget(key, 0600 | IPC_CREAT);
 		if(msqid < 0)
 		{
 			perror("msgget");

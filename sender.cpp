@@ -99,7 +99,7 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
  */
 unsigned long sendFile(const char* fileName)
 {
-	printf("sending filename \n");
+	
 
 	/* A buffer to store message we will send to the receiver. */
 	message sndMsg; 
@@ -125,6 +125,7 @@ unsigned long sendFile(const char* fileName)
 
 	while(!feof(fp))
 	{
+		printf("sending file \n");
 		/* Read at most SHARED_MEMORY_CHUNK_SIZE from the file and
  		 * store them in shared memory.  fread() will return how many bytes it has
 		 * actually read. This is important; the last chunk read may be less than
@@ -147,7 +148,7 @@ unsigned long sendFile(const char* fileName)
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving a chunk of memory. 
  		 */
-		if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0))
+		if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0) <0)
 		{
 			perror("msgrcv");
 			exit(-1);
@@ -180,6 +181,7 @@ unsigned long sendFile(const char* fileName)
  */
 void sendFileName(const char* fileName)
 {
+	printf("sending filename \n");
 	/* Get the length of the file name */
 	int fileNameSize = strlen(fileName);
 
@@ -206,6 +208,7 @@ void sendFileName(const char* fileName)
 		perror("msgsnd");
 		exit(-1);
 	}
+	printf("sent filename\n");
 }
 
 
@@ -227,7 +230,7 @@ int main(int argc, char** argv)
 	fprintf(stderr, "The number of bytes sent is %lu\n", sendFile(argv[1]));
 
 	/* Cleanup */
-	cleanUp(shmid, msqid, sharedMemPtr);
+	//cleanUp(shmid, msqid, sharedMemPtr);
 		
 	return 0;
 }
