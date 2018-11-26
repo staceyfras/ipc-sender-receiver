@@ -34,32 +34,33 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	   like the file name and the id is like the file object.  Every System V object 
 	   on the system has a unique id, but different objects may have the same key.
 	*/
+	printf("Initializing sender \n");
 	key_t key = ftok("/keyfile.txt", 'a');
-
-	
-	/* TODO: Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
-	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
-	if(shmid < 0)
-	{
-		perror("shmget");
-		exit(-1);
-	}
-	/* TODO: Attach to the shared memory */
-	sharedMemPtr = (void*) shmat (shmid, 0, 0);
-	if(((void*)sharedMemPtr) < 0)
-	{
-		perror("shmat");
-		exit(-1);
-	}
-	/* TODO: Attach to the message queue */
-	msqid = msgget(key, S_IRUSR | S_IWUSR | IPC_CREAT);
-	if(msqid < 0)
-	{
-		perror("msgget");
-		exit(-1);
+	if(key < 0) {
+		/* TODO: Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT | 0600);
+		if(shmid < 0)
+		{
+			perror("shmget");
+			exit(-1);
+		}
+		/* TODO: Attach to the shared memory */
+		sharedMemPtr = (void*) shmat (shmid, 0, 0);
+		if(((void*)sharedMemPtr) < 0)
+		{
+			perror("shmat");
+			exit(-1);
+		}
+		/* TODO: Attach to the message queue */
+		msqid = msgget(key, IPC_CREAT | 0600);
+		if(msqid < 0)
+		{
+			perror("msgget");
+			exit(-1);
+		}
 	}
 	/* Store the IDs and the pointer to the shared memory region in the corresponding function parameters */
-
+	printf("Sender Initialized \n");
 	
 }
 
@@ -72,7 +73,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 {
 	/* TODO: Detach from shared memory */
-
+	printf("cleaning up \n");
 	if(shmdt(sharedMemPtr) < 0)
 	{
 		perror("shmdt");
@@ -87,6 +88,7 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 	if(msgctl(msqid, IPC_RMID, 0) < 0){
 		perror("msgctl");
 	}
+	printf("cleaned sender \n");
 	
 }
 
@@ -97,6 +99,7 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
  */
 unsigned long sendFile(const char* fileName)
 {
+	printf("sending filename \n");
 
 	/* A buffer to store message we will send to the receiver. */
 	message sndMsg; 
@@ -149,6 +152,7 @@ unsigned long sendFile(const char* fileName)
 			perror("msgrcv");
 			exit(-1);
 		}
+		printf("file sent\n");
 
 	}
 
@@ -164,6 +168,7 @@ unsigned long sendFile(const char* fileName)
 	}
 	/* Close the file */
 	fclose(fp);
+	printf("done sending everything\n");
 	
 	return numBytesSent;
 	

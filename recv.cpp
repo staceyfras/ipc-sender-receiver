@@ -65,27 +65,28 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	   on the system has a unique id, but different objects may have the same key.
 	*/
 	key_t key = ftok("/keyfile.txt", 'a');
-
-	/* TODO: Allocate a shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
-	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, S_IRUSR | S_IWUSR);
-	if(shmid < 0)
-	{
-		perror("shmget");
-		exit(-1);
-	}
-	/* TODO: Attach to the shared memory */
-	sharedMemPtr = (void*) shmat (shmid, 0, 0);
-	if(((void*)sharedMemPtr) < 0)
-	{
-		perror("shmat");
-		exit(-1);
-	}
-	/* TODO: Create a message queue */
-	msqid = msgget(key, S_IRUSR | S_IWUSR);
-	if(msqid < 0)
-	{
-		perror("msgget");
-		exit(-1);
+	if(key < 0) {
+		/* TODO: Allocate a shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0600);
+		if(shmid < 0)
+		{
+			perror("shmget");
+			exit(-1);
+		}
+		/* TODO: Attach to the shared memory */
+		sharedMemPtr = (void*) shmat (shmid, 0, 0);
+		if(((void*)sharedMemPtr) < 0)
+		{
+			perror("shmat");
+			exit(-1);
+		}
+		/* TODO: Create a message queue */
+		msqid = msgget(key, IPC_CREAT | 0600);
+		if(msqid < 0)
+		{
+			perror("msgget");
+			exit(-1);
+		}
 	}
 	/* TODO: Store the IDs and the pointer to the shared memory region in the corresponding parameters */
 	
@@ -141,6 +142,8 @@ unsigned long mainLoop(const char* fileName)
 		message rcv;
 		ackMessage nextmsg;
 
+
+		//Receive message and get value of size field	
 		if(msgrcv(msqid, &rcv, sizeof(message) - sizeof(long), SENDER_DATA_TYPE, 0) < 0)
 		{
 			perror("msgrcv");
@@ -152,7 +155,7 @@ unsigned long mainLoop(const char* fileName)
 		if(msgSize != 0)
 		{
 			/* TODO: record the number of bytes received */
-			numBytesRecv = msgSize;
+			numBytesRecv += msgSize;
 			/* Save into the file the data in shared memory (that was put there
 			 *  by the sender) 
              */
@@ -170,12 +173,9 @@ unsigned long mainLoop(const char* fileName)
 				exit(-1);
 			}
 		}
-		/* We are done */
-		else
-		{
-			/* Close the file */
-			fclose(fp);
-		}
+		/* We are done. Close the file */
+		else { fclose(fp); }
+
 	}
 	
 	return numBytesRecv;
@@ -228,10 +228,8 @@ int main(int argc, char** argv)
  	 * queue and the shared memory segment before exiting. You may add 
 	 * the cleaning functionality in ctrlCSignal().
  	 */
-	signal(SIGINT, ctrlCSignal);
 				
 	/* Initialize */
-	while(true) {
 	init(shmid, msqid, sharedMemPtr);
 	
 	/* Receive the file name from the sender */
@@ -246,5 +244,5 @@ int main(int argc, char** argv)
 	cleanUp(shmid, msqid, sharedMemPtr);
 		
 	return 0;
-	}
+
 }
