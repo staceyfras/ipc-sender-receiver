@@ -68,7 +68,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	key_t key = ftok("/keyfile.txt", 'a');
 	if(key < 0) {
 		/* TODO: Allocate a shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
-		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0600);
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, S_IRUSR | S_IWUSR);
 		if(shmid < 0)
 		{
 			perror("shmget");
@@ -82,13 +82,14 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 			exit(-1);
 		}
 		/* TODO: Create a message queue */
-		msqid = msgget(key, 0600 | IPC_CREAT);
+		msqid = msgget(key, S_IRUSR | S_IWUSR);
 		if(msqid < 0)
 		{
 			perror("msgget");
 			exit(-1);
 		}
 	}
+	printf("receiver initialized\n");
 	/* TODO: Store the IDs and the pointer to the shared memory region in the corresponding parameters */
 	
 }
@@ -121,7 +122,7 @@ unsigned long mainLoop(const char* fileName)
 		perror("fopen");	
 		exit(-1);
 	}
-		
+	printf("file opened\n");	
 
 	/* Keep receiving until the sender sets the size to 0, indicating that
  	 * there is no more data to send.
@@ -150,13 +151,14 @@ unsigned long mainLoop(const char* fileName)
 			perror("msgrcv");
 			exit(-1);
 		}
+		printf("receieved message\n");
 
 		msgSize = rcv.size;
 		/* If the sender is not telling us that we are done, then get to work */
 		if(msgSize != 0)
 		{
 			/* TODO: record the number of bytes received */
-			numBytesRecv += msgSize;
+			numBytesRecv = msgSize;
 			/* Save into the file the data in shared memory (that was put there
 			 *  by the sender) 
              */
@@ -204,7 +206,8 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 		perror("shmctl");
 	}
 	/* TODO: Deallocate the message queue */
-	if(msgctl(msqid, IPC_RMID, 0) < 0){
+	if(msgctl(msqid, IPC_RMID, 0) < 0)
+	{
 		perror("msgctl");
 	}
 }
@@ -217,7 +220,7 @@ void ctrlCSignal(int signal)
 {
 	/* Free system V resources */
 	cleanUp(shmid, msqid, sharedMemPtr);
-	printf("%s\n", "Deleting...Goodbye!");
+	printf("Deleting...Goodbye!\n");
 	exit(0);
 }
 

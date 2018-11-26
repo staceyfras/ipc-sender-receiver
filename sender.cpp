@@ -38,7 +38,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	key_t key = ftok("/keyfile.txt", 'a');
 	if(key < 0) {
 		/* TODO: Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
-		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT | 0600);
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
 		if(shmid < 0)
 		{
 			perror("shmget");
@@ -52,10 +52,12 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 			exit(-1);
 		}
 		/* TODO: Attach to the message queue */
-		msqid = msgget(key, IPC_CREAT | 0600);
+		msqid = msgget(key, S_IRUSR | S_IWUSR | IPC_CREAT);
 		if(msqid < 0)
 		{
+			printf("2");
 			perror("msgget");
+			
 			exit(-1);
 		}
 	}
@@ -77,17 +79,20 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 	if(shmdt(sharedMemPtr) < 0)
 	{
 		perror("shmdt");
+		
 	}
 	
 	/* TODO: Deallocate the shared memory segment */
 	if(shmctl(shmid, IPC_RMID, 0) < 0)
 	{
 		perror("shmctl");
+		
 	}
 	/* TODO: Deallocate the message queue */
 	if(msgctl(msqid, IPC_RMID, 0) < 0){
-		perror("msgctl");
+		perror("msgctl");	
 	}
+
 	printf("cleaned sender \n");
 	
 }
@@ -133,7 +138,8 @@ unsigned long sendFile(const char* fileName)
 		 * read in numBytesSent to record how many bytes were actually send.
  		 */
 		
-		/* TODO: count the number of bytes sent. */		
+		/* TODO: count the number of bytes sent. */	
+		// Read into sharedMemPtr CHUNK_SIZE number of single bites from fp	
 		numBytesSent = fread(sharedMemPtr, 1, SHARED_MEMORY_CHUNK_SIZE, fp);
 		/* TODO: Send a message to the receiver telling him that the data is ready
  		 * to be read (message of type SENDER_DATA_TYPE).
@@ -148,7 +154,7 @@ unsigned long sendFile(const char* fileName)
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving a chunk of memory. 
  		 */
-		if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0) <0)
+		if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0) < 0)
 		{
 			perror("msgrcv");
 			exit(-1);
@@ -162,6 +168,7 @@ unsigned long sendFile(const char* fileName)
  	  * sending a message of type SENDER_DATA_TYPE with size field set to 0. 	
 	  */
 	sndMsg.size = 0;
+	sndMsg.mtype = SENDER_DATA_TYPE;
 	if(msgsnd(msqid, &sndMsg, sizeof(message) - sizeof(long), 0) < 0)
 	{
 		perror("msgsnd");
@@ -230,7 +237,7 @@ int main(int argc, char** argv)
 	fprintf(stderr, "The number of bytes sent is %lu\n", sendFile(argv[1]));
 
 	/* Cleanup */
-	//cleanUp(shmid, msqid, sharedMemPtr);
+	cleanUp(shmid, msqid, sharedMemPtr);
 		
 	return 0;
 }
