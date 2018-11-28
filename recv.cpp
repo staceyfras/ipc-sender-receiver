@@ -68,7 +68,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	key_t key = ftok("/keyfile.txt", 'a');
 	if(key < 0) {
 		/* TODO: Allocate a shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
-		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, S_IRUSR | S_IWUSR);
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0666);
 		if(shmid < 0)
 		{
 			perror("shmget");

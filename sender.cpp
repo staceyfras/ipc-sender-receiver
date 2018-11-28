@@ -38,7 +38,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	key_t key = ftok("/keyfile.txt", 'a');
 	if(key < 0) {
 		/* TODO: Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
-		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
+		shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT | 0666);
 		if(shmid < 0)
 		{
 			perror("shmget");
@@ -154,10 +154,12 @@ unsigned long sendFile(const char* fileName)
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving a chunk of memory. 
  		 */
-		if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0) < 0)
-		{
-			perror("msgrcv");
-			exit(-1);
+		while(rcvMsg.mtype != RECV_DONE_TYPE) {
+			if(msgrcv(msqid, &rcvMsg, sizeof(ackMessage) - sizeof(long), RECV_DONE_TYPE, 0) < 0)
+			{
+				perror("msgrcv");
+				exit(-1);
+			}
 		}
 		printf("file sent\n");
 
@@ -232,7 +234,7 @@ int main(int argc, char** argv)
 	init(shmid, msqid, sharedMemPtr);
 
 	/* Send the name of the file */
-	sendFileName(argv[1]);;	
+	sendFileName(argv[1]);	
 	//  Send the file 
 	fprintf(stderr, "The number of bytes sent is %lu\n", sendFile(argv[1]));
 
