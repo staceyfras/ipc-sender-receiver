@@ -1,4 +1,4 @@
-README.txt
+# IPC Program for CSUF
 
 Name: Stacey Frasier
 Email: stacey726@csu.fullerton.edu
