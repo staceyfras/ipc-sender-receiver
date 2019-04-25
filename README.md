@@ -4,9 +4,9 @@ Name: Stacey Frasier
 Email: stacey726@csu.fullerton.edu
 Language: C++
 How to Execute:
-	>>	g++ sender.cpp -o sender
-	>>	g++ recv.cpp -o recv
-	>>	./sender keyfile.txt | ./recv
+* g++ sender.cpp -o sender
+* g++ recv.cpp -o recv
+* ./sender keyfile.txt | ./recv
 
 Extra Credit: NONE
 Notes: It works on the first run, but if I try to run it again it fails: "shmget: No such file or 
